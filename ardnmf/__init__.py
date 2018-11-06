@@ -13,7 +13,7 @@ from .logger import *
 class ARDNMF(BaseEstimator, TransformerMixin):
     def __init__(self, a, init=None, beta=1, tol=1e-5,
                  max_iter=200, random_state=None, verbose=logging.INFO,
-                 prior=EXP_PRIOR, norm_H=True, tau=None):
+                 prior=EXP_PRIOR, norm_H=True, tau=None,type = None,cosmic_signatures = None):
         self.a = a
         self.init = init
         self.beta = beta
@@ -23,11 +23,18 @@ class ARDNMF(BaseEstimator, TransformerMixin):
         self.verbose = verbose
         self.prior = prior
         self.norm_H = norm_H
-
+        #SP: set cancer type
+        self.type = type
+        self.cosmic_signatures = cosmic_signatures
         # As they suggest, we can always set tau to be the tolerance
         if tau == None:
             tau = tol
         self.tau = tau
+        #SP: a dictionary mapping cancer types to signatures
+        #SP: Feel free to add more cancer type specific signatures to the list
+        #SP: Signatures:               Sig  1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30
+        self.cols = {"HNSCC": list(map(bool,[1,1,0,1,1,0,1,0,0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
+                     "BLCA": list(map(bool,[1,1,0,0,1,0,0,0,0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))}
 
     def fit(self, X):
         raise NotImplementedError("ARDNMF.fit is not yet implemented.")
@@ -49,7 +56,7 @@ class ARDNMF(BaseEstimator, TransformerMixin):
         # Run ARDNMF
         W, H, lambdas, obj, fit, bound = ardnmf(X, prior=self.prior, K=L,
             a=self.a, b=self.b_, beta=self.beta, max_iter=self.max_iter,
-            tol=self.tol, verbose=self.verbose, random_state=self.random_state)
+            tol=self.tol, verbose=self.verbose, random_state=self.random_state,type = self.cols[self.type],cosmic_signatures=self.cosmic_signatures)
 
         # Choose K_effective
         k_eff, W, H = _choose_keff(lambdas[:, -1], self.tau, self.B_, W, H)
